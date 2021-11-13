@@ -1,10 +1,10 @@
 use axum::{
-    routing::{get, post},
+    routing::{get, put, post},
     Router,
 };
 
 mod routes;
-use routes::{root, random, chosen, short};
+use routes::{chosen, edit, random, root, short};
 
 #[tokio::main]
 async fn main() {
@@ -13,21 +13,31 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
-    use tower_http::{auth::AddAuthorizationLayer, compression::CompressionLayer, trace::TraceLayer};
-    use tower::ServiceBuilder;
     use std::time::Duration;
+    use tower::ServiceBuilder;
+    use tower_http::{
+        auth::RequireAuthorizationLayer, compression::CompressionLayer, trace::TraceLayer,
+    };
 
     let middleware_stack = ServiceBuilder::new()
         // timeout all requests after 5 seconds
         // .timeout(Duration::from_secs(5))
         // add high level tracing of requests and responses
         .layer(TraceLayer::new_for_http())
-        // add autorization
-        // .layer(AddAuthorizationLayer::basic("username", "password"))
         // compression responses
         .layer(CompressionLayer::new());
 
-    let app = Router::new().route("/", get(root)).route("/r", post(random)).route("/c", post(chosen)).route("/s/:short", get(short)).layer(middleware_stack);
+    let app = Router::new()
+        .route("/", get(root))
+        .route("/r", post(random))
+        .route("/c", post(chosen))
+        .route("/e", put(edit))
+        // add authorization for homepage, creating and modifying
+        .layer(RequireAuthorizationLayer::basic("username", "password"))
+        // short links don't need authorization
+        .route("/s/:short", get(short))
+        // add middleware to all routes
+        .layer(middleware_stack);
 
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);

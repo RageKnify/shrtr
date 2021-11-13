@@ -12,7 +12,7 @@ pub(crate) struct NewURL {
 }
 
 pub(crate) async fn random(Json(new): Json<NewURL>) {
-    tracing::info!("random {}", new.long);
+    tracing::info!("random {:?}", new.long);
     let short: u64 = todo!("generate new random u64");
     match Uri::try_from(new.long) {
         Ok(_) => todo!("happy path"),
@@ -27,7 +27,7 @@ pub(crate) struct NewChosenURL {
 }
 
 pub(crate) async fn chosen(Json(new): Json<NewChosenURL>) {
-    tracing::info!("chosen {}: {}", new.short, new.long);
+    tracing::info!("chosen {:?}: {:?}", new.short, new.long);
     todo!("check that new.short isn't in use");
     match Uri::try_from(new.long) {
         Ok(_) => todo!("happy path"),
@@ -36,11 +36,24 @@ pub(crate) async fn chosen(Json(new): Json<NewChosenURL>) {
 }
 
 pub(crate) async fn short(Path(key): Path<String>) -> Redirect {
-    tracing::info!("short {}", key);
+    tracing::info!("short {:?}", key);
     let uri = Uri::builder()
         .scheme("https")
         .authority("jplborges.pt")
         .path_and_query("")
-        .build().expect("this should URI build without problems");
+        .build().expect("this URI should build without problems");
     Redirect::temporary(uri)
+}
+
+#[derive(Deserialize, Debug)]
+pub(crate) struct EditURL {
+    old_short: String,
+    short: Option<String>,
+    long: Option<String>,
+}
+
+pub(crate) async fn edit(Json(edit_url): Json<EditURL>) {
+    tracing::info!("edit {:?}", edit_url);
+    todo!("check that editURL.old_short exists");
+    todo!("check that editURL.short isn't in use");
 }
